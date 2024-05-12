@@ -1,0 +1,6 @@
+export const PROFILE_EDIT = 'profile.edit'
+export const PROFILE_EDIT_CAN_CHANGE_PASSWORD = 'profile.edit.can-change-password'
+export const PROFILE_EDIT_CAN_UPDATE_ROLES = 'profile.edit.can-update-roles'
+export const PROFILE_EDIT_CAN_UPDATE_TAGS = 'profile.edit.can-update-tags'
+export const PROFILE_EDIT_CAN_UPDATE_COMPANY = 'profile.edit.can-update-company'
+export const PROFILE_EDIT_CAN_UPDATE_STORE = 'profile.edit.can-update-store'

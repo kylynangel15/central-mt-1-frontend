@@ -1,0 +1,10 @@
+export const TAG_VIEW = 'tag.view';
+export const TAG_VIEW_CAN_COMPANY = 'tag.view.can-company'
+export const TAG_CREATE = 'tag.create';
+export const TAG_CREATE_CAN_COMPANY = 'tag.create.can-company'
+export const TAG_EDIT = 'tag.edit';
+export const TAG_EDIT_ASSIGN_USERS = 'tag.edit.assign-users'
+export const TAG_EDIT_ASSIGN_COURSES = 'tag.edit.assign-courses'
+export const TAG_EDIT_DETACH_USERS = 'tag.edit.detach-users'
+export const TAG_EDIT_DETACH_COURSES = 'tag.edit.detach-courses';
+export const TAG_DELETE = 'tag.delete';

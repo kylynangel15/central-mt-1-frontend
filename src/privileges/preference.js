@@ -1,0 +1,8 @@
+export const PREFERENCE_VIEW = 'preference.view'
+export const PREFERENCE_VIEW_CAN_COMPANY = 'preference.view.can-company'
+export const PREFERENCE_VIEW_CAN_STORE = 'preference.view.can-store'
+export const PREFERENCE_SET = 'preference.set'
+export const PREFERENCE_SET_CAN_COMPANY = 'preference.set.can-company'
+export const PREFERENCE_SET_CAN_STORE = 'preference.set.can-store'
+export const PREFERENCE_OVERWRITE = 'preference.overwrite'
+export const PREFERENCE_RESET = 'preference.reset'

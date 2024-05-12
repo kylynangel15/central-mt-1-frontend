@@ -1,0 +1,578 @@
+<template>
+	<div class="flex-1">
+		<div class="mx-auto py-2 lg:py-4">
+			<div class="py-8">
+				<div class="">
+					<div>
+						<h3 class="text-lg font-medium leading-6 text-gray-900">
+							Users
+						</h3>
+					</div>
+					<div class="mb-2">
+						<div class="relative mt-1 rounded-md shadow-sm">
+							<div
+								class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+								<MagnifyingGlassIcon
+									class="h-5 w-5 text-gray-400"
+									aria-hidden="true" />
+							</div>
+							<input
+								id="search"
+								name="search"
+								v-model="search"
+								type="text"
+								placeholder="Type to search"
+								autocomplete="search"
+								class="block w-full appearance-none rounded-md border border-untitled-gray-300 pl-10 px-3 py-2 placeholder-untitled-gray-400 shadow-sm focus:border-untitled-gray-500 focus:outline-none focus:ring-untitled-gray-500 sm:text-sm" />
+						</div>
+					</div>
+					<div class="sm:flex sm:items-center mb-10">
+						<div class="sm:flex-auto">
+							<div
+								class="md:grid md:grid-cols-3 xs:grid-cols-2 md:gap-1">
+								<div class="mr-2 md:col-span-1">
+									<SelectStatus
+										v-model="status"
+										:show-label="false" />
+								</div>
+								<div
+									class="mr-2 md:col-span-1">
+									<SelectStore
+										v-model="store"
+										:company-id="companyId"
+										:show-label="false" />
+								</div>
+								<div class="md:col-span-1">
+									<SelectRoles
+										:show-label="false"
+										v-model="userRoles"
+										@clearRoles="handleClearRoles" />
+								</div>
+								<div class="md:col-span-1">
+									<button
+										type="button"
+										@click="handleClickClearFilter"
+										class="flex mt-1 w-32 justify-center rounded-md border border-transparent bg-white py-2 px-4 text-sm font-medium text-untitled-gray-500 shadow-lg mr-2 hover:bg-untitled-gray-100 focus:outline-none focus:ring-2 focus:ring-untitled-gray-400 focus:ring-offset-2">
+										Clear Filter
+									</button>
+								</div>
+							</div>
+						</div>
+						<div class="mt-4 sm:mt-0 sm:ml-8 md:flex">
+							<button
+								v-if="users.length > 0"
+								v-administrator
+								type="button"
+								@click="handleClickDetach"
+								class="flex w-56 justify-center rounded-md border border-transparent bg-white py-2 px-4 text-sm font-medium text-untitled-gray-500 shadow-lg mr-2 hover:bg-untitled-gray-100 focus:outline-none focus:ring-2 focus:ring-untitled-gray-400 focus:ring-offset-2">
+								<MinusCircleIcon class="w-5 mr-2" /> Detach all
+								Users
+							</button>
+							<button
+								type="button"
+								@click="handleAddUser"
+								class="flex sm:mt-2 md:mt-0 mr-2 w-44 justify-center rounded-md border border-transparent bg-untitled-gray-500 py-2 h-10 px-4 text-sm font-medium text-white shadow-sm hover:bg-untitled-gray-500 focus:outline-none focus:ring-2 focus:ring-untitled-gray-500 focus:ring-offset-2">
+								<PlusIcon class="w-5 mr-2" /> Attach Users
+							</button>
+						</div>
+					</div>
+					<div
+						class="bg-white shadow-md border border-untitled-gray-100">
+						<data-table
+							:items="users"
+							:columns="columns"
+							:action="true"
+							:actions="['Options']"
+							:loading="loadingUsers"
+							:error="errorApi"
+							:is-paginate="true"
+							:table-type="'stripe'"
+							:is-sort-by-live="true"
+							:pagination-options="paginationOptions"
+							@showMorePage="handleClickShowMore"
+							@pageChanged="handleChangePage"
+							@sort="handleSortList">
+							<template #role="{ scope }">
+								<div class="flex-wrap w-full">
+									<span
+										class="mr-2 bg-untitled-gray-400 text-xs text-white p-2 rounded-full"
+										v-for="(role, index) in scope.roles"
+										:key="index"
+										>{{ role.friendly_name }}
+									</span>
+								</div>
+							</template>
+							<template #date_created="{ scope }">
+								{{ formatDate(scope.created_at) }}
+							</template>
+							<template #status="{ scope }">
+								<span
+									class="text-xs"
+									:class="[
+										scope.status == 'ACTIVE'
+											? 'bg-green-500 text-white p-1 px-4 rounded-full text-center'
+											: '',
+										scope.status == 'UNDER_REVIEW'
+											? 'bg-yellow-600 text-white p-1 px-4 rounded-full  text-center'
+											: '',
+										scope.status == 'INACTIVE'
+											? 'bg-stone-600 text-white p-1 px-4 rounded-full  text-center'
+											: '',
+										scope.status == 'REJECTED'
+											? 'bg-red-600 text-white p-1 px-4 rounded-full  text-center'
+											: '',
+									]">
+									{{ replaceStatusString(scope.status) }}
+								</span>
+							</template>
+							<template #options="{ scope }">
+								<Menu
+									as="div"
+									class="relative inline-block text-left">
+									<div>
+										<MenuButton
+											class="inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-untitled-gray-500 focus:ring-offset-2 focus:ring-offset-gray-100">
+											<EllipsisVerticalIcon
+												class="h-5 w-5"
+												aria-hidden="true" />
+										</MenuButton>
+									</div>
+
+									<transition
+										enter-active-class="transition ease-out duration-100"
+										enter-from-class="transform opacity-0 scale-95"
+										enter-to-class="transform opacity-100 scale-100"
+										leave-active-class="transition ease-in duration-75"
+										leave-from-class="transform opacity-100 scale-100"
+										leave-to-class="transform opacity-0 scale-95">
+										<MenuItems
+											class="absolute right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+											<div class="py-1">
+												<MenuItem v-slot="{ active }">
+													<a
+														type="button"
+														@click="
+															handleClickViewUser(
+																scope
+															)
+														"
+														:class="[
+															active
+																? 'bg-gray-100 text-gray-900'
+																: 'text-gray-700',
+															'group flex items-center px-4 py-2 text-sm cursor-pointer',
+														]">
+														<EyeIcon
+															class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+															aria-hidden="true" />
+														View
+													</a>
+												</MenuItem>
+												<MenuItem v-slot="{ active }" v-user-edit>
+													<a
+														type="button"
+														@click="
+															handleClickEdit(
+																scope
+															)
+														"
+														:class="[
+															active
+																? 'bg-gray-100 text-gray-900'
+																: 'text-gray-700',
+															'group flex items-center px-4 py-2 text-sm cursor-pointer',
+														]">
+														<PencilSquareIcon
+															class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+															aria-hidden="true" />
+														Edit
+													</a>
+												</MenuItem>
+											</div>
+											<div class="py-1">
+												<MenuItem v-slot="{ active }">
+													<a
+														type="button"
+														@click="
+															handleRemoveCourse(
+																scope
+															)
+														"
+														:class="[
+															active
+																? 'bg-gray-100 text-gray-900'
+																: 'text-gray-700',
+															'group flex items-center px-4 py-2 text-sm cursor-pointer',
+														]">
+														<MinusCircleIcon
+															class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500"
+															aria-hidden="true" />
+														Remove from Tags
+													</a>
+												</MenuItem>
+											</div>
+										</MenuItems>
+									</transition>
+								</Menu>
+							</template>
+						</data-table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+    <AddUserModals
+		v-if="openModal"
+		:open-modal="openModal"
+		:tag-profile="tagProfile"
+		:tag-id="tagId"
+		:company-id="companyId"
+		@close-modal="handleCloseModal"
+		@addUsers="handleAddUsers" />
+
+	<global-popup-notification
+		v-if="showNotif"
+		:show-notification="showNotif"
+		:message="messageNotif" />
+
+	<global-delete-confirmation
+		@closeModal="handleCloseModal"
+		@confirmed="handleRemoveCompanyFromApp"
+		:selected-item="selectedItem"
+		:params="itemName"
+		:message="removeMessage"
+		:dialog-title="'Remove Confirmation'"
+		:open-modal="openRemoveConfirmation" />
+</template>
+<script>
+// use normal <script> to declare options
+export default {
+    inheritAttrs: false
+};
+</script>
+<script setup>
+import { UserCircleIcon } from '@heroicons/vue/20/solid';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
+import {
+	MagnifyingGlassIcon,
+	EyeIcon,
+	PencilSquareIcon,
+	TrashIcon,
+	PlusIcon,
+	EllipsisVerticalIcon,
+	MinusCircleIcon,
+} from '@heroicons/vue/24/outline';
+import {
+	ref,
+	onMounted,
+	watch,
+	defineAsyncComponent,
+	defineProps,
+	computed,
+	toRefs,
+} from 'vue';
+import SelectRoles from '@/modules/roles/utilities/SelectRoles.vue';
+import { debounce as _debounce } from 'lodash-es';
+import { useRouter } from 'vue-router';
+import { getUsers } from '@/modules/companies/composables/user/get_users';
+import { useUserStore } from '@/modules/companies/store/user/useUserStore';
+import SelectStore from '@/modules/companies/components/store/utilities/SelectStore.vue';
+import SelectStatus from '@/modules/companies/utilities/user/SelectStatus.vue';
+import { deleteUser } from '@/modules/companies/composables/user/delete_user';
+import SelectCompanies from '@/modules/companies/utilities/SelectCompanies.vue';
+import { removeFromTag } from '../composables/remove_from_tag';
+import AddUserModals from './modals/AddUserModals.vue';
+import { formatDate } from '@/composables/date_formatter'
+
+const props = defineProps({
+	tagProfile: {
+		type: Object,
+		required: true,
+	},
+	tagId: {
+		type: Number,
+		required: true,
+	},
+	companyId: {
+		type: Number,
+        required: true,
+	}
+});
+const userStore = useUserStore();
+const router = useRouter();
+
+const users = computed(() => userStore.users);
+const loadingUsers = ref(true);
+const search = ref(null);
+const errorApi = ref(false);
+const isView = ref(false);
+const openModal = ref(false);
+const selectedItem = ref(null);
+const messageNotif = ref('');
+const showNotif = ref(false);
+const itemName = ref('');
+const openDeleteConfirmation = ref(false);
+
+const paginationOptions = ref({
+	totalPages: 0,
+	total: 0,
+	currentPage: 1,
+	perPage: 10,
+	hasMorePages: true,
+});
+const sortListBy = ref({
+	name: '',
+	type: '',
+	is_nested_sort: 0,
+});
+const roles = ref([]);
+const store = ref({});
+const userCompanies = ref({});
+const userRoles = ref([]);
+const status = ref('');
+const tagId = computed(() => props.tagId);
+const tagProfile = computed(() => props.tagProfile)
+const openRemoveConfirmation = ref(false);
+const removeMessage = ref(
+	'Removed Successfully'
+);
+const companyId = computed(() => props.companyId)
+
+const columns = [
+	{
+		prop: 'name',
+		label: 'Name',
+		sortable: true,
+		clickable: false,
+		class: '',
+	},
+	{
+		prop: 'email',
+		label: 'Email',
+		sortable: true,
+		clickable: false,
+		class: '',
+	},
+	{
+		prop: 'roles',
+		label: 'Role',
+		sortable: false,
+		clickable: false,
+		class: '',
+	},
+	{
+		prop: 'status',
+		label: 'Status',
+		sortable: true,
+		clickable: false,
+		class: '',
+	},
+	{
+		prop: 'store.name',
+		label: 'Store',
+		sortable: false,
+		clickable: false,
+		class: '',
+	},
+	{
+		prop: 'created_at',
+		label: 'Date Created',
+		slot_name: 'date_created',
+		sortable: false,
+		clickable: false,
+		class: '',
+	}
+];
+
+const fetchUsers = async () => {
+	const params = {
+		search: search.value,
+		page: paginationOptions.value.currentPage,
+		size: paginationOptions.value.perPage,
+		sort_label: sortListBy.value.name,
+		sort_by: sortListBy.value.type,
+		is_nested_sort: sortListBy.value.is_nested_sort,
+		status: status.value,
+		roles: userRoles.value.map((role) => role.id),
+		company_id: companyId.value,
+		store_id: store.value.id,
+		tags: [tagId.value],
+	};
+
+	loadingUsers.value = true;
+	const { data, load, hasError, totalPages, totalUsers, hasLastPage } =
+		getUsers(params);
+	await load();
+	if (hasError.value) {
+		errorApi.value = hasError.value;
+		return;
+	}
+	paginationOptions.value.totalPages = totalPages.value;
+	paginationOptions.value.total = totalUsers.value;
+	paginationOptions.value.hasMorePages = hasLastPage.value;
+	loadingUsers.value = false;
+	userStore.setUsers(data.value);
+};
+
+const handleClickClearFilter = () => {
+	status.value = '';
+	userCompanies.value = {};
+	store.value = {};
+	userRoles.value = [];
+};
+
+const handleClickAddUser = () => {
+	router.push({ name: 'Create Company User Page' });
+};
+
+const handleCloseModal = () => {
+	openModal.value = false;
+	openRemoveConfirmation.value = false;
+};
+
+const handleStoreUser = (user) => {
+	userStore.create(user);
+	openModal.value = false;
+	notification('Successfully added!');
+};
+
+const handleUpdatedUser = (updatedUser) => {
+	userStore.update(updatedUser);
+	openModal.value = false;
+	selectedItem.value = null;
+	notification('Successfully updated!');
+};
+
+const handleChangePage = (value) => {
+	paginationOptions.value.perPage = parseInt(value);
+	fetchUsers();
+};
+
+const handleClickShowMore = (page) => {
+	paginationOptions.value.currentPage = page;
+	fetchUsers();
+};
+
+const handleSortList = ({ label, sortBy, is_nested }) => {
+	const { name, type, is_nested_sort } = toRefs(sortListBy.value);
+	name.value = label;
+	type.value = sortBy;
+	is_nested_sort.value = is_nested ? 1 : 0;
+	fetchUsers();
+};
+
+const handleClickEdit = (user) => {
+	router.push({
+		name: 'Edit Company User Page',
+		params: {
+			userId: user.id,
+		},
+	});
+};
+
+const handleClearRoles = () => {
+	userRoles.value = [];
+};
+
+const handleClearCompany = () => {
+	userCompanies.value = {};
+};
+
+const replaceStatusString = (status) => {
+	return status.replace('_', ' ');
+};
+
+const handleClickDelete = (user) => {
+	openDeleteConfirmation.value = true;
+	selectedItem.value = { ...user };
+	itemName.value = selectedItem.value.name;
+};
+
+const handleClickViewUser = (user) => {
+	router.push({
+		name: 'View Company User Page',
+		params: {
+			id: user.company_id,
+			userId: user.id,
+		},
+	});
+};
+
+const handleRemoveCompanyFromApp = async (item) => {
+    const params = {
+        tag_id: tagId.value,
+        users: item == 'all' ? 'all' : [item.id],
+        courses: []
+    }
+    const { remove } = removeFromTag(params);
+    await remove();
+    notification('Successfully removed!')
+    openRemoveConfirmation.value = false
+    fetchUsers();
+};
+
+const handleAddUsers = () => {
+    openModal.value = false;
+    notification('Successfully added!')
+    fetchUsers();
+}
+
+const notification = (message) => {
+	messageNotif.value = message;
+	showNotif.value = true;
+	setTimeout(() => {
+		showNotif.value = false;
+	}, 2000);
+};
+
+const handleAddUser = () => {
+    openModal.value = true;
+};
+
+const handleClickDetach = () => {
+    openRemoveConfirmation.value = true;
+    selectedItem.value = 'all';
+};
+
+const handleRemoveCourse = (scope) => {
+    removeMessage.value = 'Are you sure your to remove this tag?'
+    itemName.value = scope.name
+    openRemoveConfirmation.value = true;
+    selectedItem.value = scope
+}
+
+const onChangeSearchText = _debounce((value) => {
+	fetchUsers();
+}, 500);
+
+onMounted(async () => {
+	await fetchUsers();
+});
+
+watch(search, () => {
+	onChangeSearchText();
+});
+
+watch(roles, () => {
+	fetchUsers();
+});
+
+watch(store, () => {
+	fetchUsers();
+});
+
+watch(status, (val) => {
+	if (val) {
+		onChangeSearchText();
+	}
+});
+
+watch(userRoles, () => {
+	fetchUsers();
+});
+
+watch(userCompanies, () => {
+	fetchUsers();
+});
+</script>
